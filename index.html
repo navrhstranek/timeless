@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Timeless</title>
+<style>
+  :root { color-scheme: dark; --bg: #0b0e13; --fg: #e8edf2; --muted: #8b96a3; --brand: #00aff0; }
+  @media (prefers-color-scheme: light) { :root { color-scheme: light; --bg: #f6f7f9; --fg: #14181d; --muted: #5d6773; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); color: var(--fg);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; }
+  main { max-width: 26rem; }
+  h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.02em; }
+  p { margin: 0 0 20px; color: var(--muted); }
+  a.btn { display: inline-block; padding: 12px 22px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 600; text-decoration: none; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Timeless</h1>
+  <p id="msg">Otevírám…</p>
+  <a id="go" class="btn" href="#" hidden>Otevřít Timeless</a>
+</main>
+<script>
+(async () => {
+  const msg = document.getElementById("msg");
+  const go = document.getElementById("go");
+  const say = (t) => { msg.textContent = t; };
+  let url = "";
+  try {
+    const r = await fetch("odkaz.json?t=" + Date.now(), { cache: "no-store" });
+    url = (await r.json()).url || "";
+  } catch (e) {
+    return say("Odkaz se nepodařilo načíst. Zkus to za chvíli znovu.");
+  }
+  if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) return say("Timeless zatím nemá veřejnou adresu.");
+  go.href = url;
+  go.hidden = false;
+  try {
+    const ctl = new AbortController();
+    setTimeout(() => ctl.abort(), 8000);
+    await fetch(url + "/robots.txt?t=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: ctl.signal });
+    location.replace(url);
+  } catch (e) {
+    say("Timeless teď neodpovídá – Mac je vypnutý nebo uspaný, nebo se zrovna spouští nová adresa (za pár minut to tu bude fungovat samo).");
+  }
+})();
+</script>
+</body>
+</html>
