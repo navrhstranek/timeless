@@ -38,15 +38,21 @@
     return say("Odkaz se nepodařilo načíst. Zkus to za chvíli znovu.");
   }
   if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) return say("Timeless zatím nemá veřejnou adresu.");
-  go.href = url;
+  // #/h/<kód> = osobní odkaz chattera na hlášení směny (kód za # se na GitHub vůbec neposílá)
+  const deep = /^#\/h\/[A-Za-z0-9_-]{16,64}$/.test(location.hash) ? location.hash.slice(1) : "";
+  const target = url + deep;
+  go.href = target;
+  go.textContent = deep ? "Otevřít hlášení směny" : "Otevřít Timeless";
   go.hidden = false;
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 8000);
     await fetch(url + "/robots.txt?t=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: ctl.signal });
-    location.replace(url);
+    location.replace(target);
   } catch (e) {
-    say("Timeless teď neodpovídá – Mac je vypnutý nebo uspaný, nebo se zrovna spouští nová adresa (za pár minut to tu bude fungovat samo).");
+    say(deep
+      ? "Hlášení teď nejde otevřít – Timeless se zrovna restartuje. Zkus to za pár minut znovu (stejným odkazem)."
+      : "Timeless teď neodpovídá – Mac je vypnutý nebo uspaný, nebo se zrovna spouští nová adresa (za pár minut to tu bude fungovat samo).");
   }
 })();
 </script>
