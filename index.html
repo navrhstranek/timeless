@@ -16,6 +16,9 @@
   h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.02em; }
   p { margin: 0 0 20px; color: var(--muted); }
   a.btn { display: inline-block; padding: 12px 22px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 600; text-decoration: none; }
+  ol { margin: 0 0 22px; padding-left: 22px; text-align: left; color: var(--muted); }
+  li { margin: 6px 0; }
+  b { color: var(--fg); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -23,6 +26,12 @@
 <main>
   <h1>Timeless</h1>
   <p id="msg">Otevírám…</p>
+  <ol id="home" hidden>
+    <li>Dole v Safari klepni na <b>Sdílet</b> (čtvereček se šipkou, případně nejdřív na <b>…</b>).</li>
+    <li>Vyber <b>Přidat na plochu</b>.</li>
+    <li>Když je tam přepínač <b>Otevřít jako webovou aplikaci</b>, vypni ho.</li>
+    <li>Klepni na <b>Přidat</b>. Ikona pak vždycky otevře tenhle telefon v Timeless.</li>
+  </ol>
   <a id="go" class="btn" href="#" hidden>Otevřít Timeless</a>
 </main>
 <script>
@@ -38,19 +47,32 @@
     return say("Odkaz se nepodařilo načíst. Zkus to za chvíli znovu.");
   }
   if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) return say("Timeless zatím nemá veřejnou adresu.");
-  // #/h/<kód> = osobní odkaz chattera na hlášení směny (kód za # se na GitHub vůbec neposílá)
-  const deep = /^#\/h\/[A-Za-z0-9_-]{16,64}$/.test(location.hash) ? location.hash.slice(1) : "";
+  // #/h/<kód> = osobní odkaz chattera na hlášení směny, #/f/<kód> = stránka iPhonu z Farmy
+  // (kód za # se na GitHub vůbec neposílá); #/f/<kód>/plocha = návod na ikonu na ploše
+  const m = /^#(\/(h|f)\/[A-Za-z0-9_-]{16,64})(\/plocha)?$/.exec(location.hash);
+  const deep = m ? m[1] : "";
+  const phone = m && m[2] === "f";
   const target = url + deep;
   go.href = target;
-  go.textContent = deep ? "Otevřít hlášení směny" : "Otevřít Timeless";
+  go.textContent = phone ? "Otevřít telefon" : deep ? "Otevřít hlášení směny" : "Otevřít Timeless";
   go.hidden = false;
+  if (phone && m[3]) {
+    // ikona na ploše si pamatuje adresu – ať otevírá rovnou telefon, ne tenhle návod
+    history.replaceState(null, "", "#" + deep);
+    document.title = "Farma";
+    say("Přidej si stránku telefonu na plochu:");
+    document.getElementById("home").hidden = false;
+    return;
+  }
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 8000);
     await fetch(url + "/robots.txt?t=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: ctl.signal });
     location.replace(target);
   } catch (e) {
-    say(deep
+    say(phone
+      ? "Stránka telefonu teď nejde otevřít – Timeless se zrovna restartuje, nebo je Mac vypnutý. Zkus to za pár minut znovu."
+      : deep
       ? "Hlášení teď nejde otevřít – Timeless se zrovna restartuje. Zkus to za pár minut znovu (stejným odkazem)."
       : "Timeless teď neodpovídá – Mac je vypnutý nebo uspaný, nebo se zrovna spouští nová adresa (za pár minut to tu bude fungovat samo).");
   }
